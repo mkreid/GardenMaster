@@ -1,0 +1,11 @@
+<Context>
+  	<Resource name="jdbc/gardenmaster"
+  	auth="container"
+  	type="javax.sqlDataSource"
+  	username="root"
+  	password="malcolm0"
+  	drierClassName="com.mysql.jdbc.DRiver"
+  	url="jdbc:mysql:/localhost:3306/gardenmaster"
+  	maxActive="15"
+  	maxIdle="3"/>
+  </Context>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="ISO-8859-1">
+<meta charset="utf8">
 <title>Welcome to GardenMaster</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,9 +11,32 @@ Welcome to GardenMaster!</div>
 
 <div id = "welcomeMenu">
 
-<div id = "welcomeMenuItem"><a href="newAdventure.jsp">New Adventure</a></div>
+<form method="post" action="/GardenMaster/login">
+<div id = "welcomeMenuItem">
+	<p>Welcome! Please sign in:</p>
+	<label for="username"><b>Username:</b></label>
+	<input type="text" placeholder="Enter Username" name="username" required/>
+	<br>
+	<label for="password"><b>Password:</b></label>
+	<input type="password" placeholder="Enter Password" name="password" required/>
+	<br>
+	<input type="hidden" name="action_request" value=""/>
+	<button type="submit">Login</button>
+	<label>
+		<input type="checkbox" checked="checked" name="remember">Remember me
+	</label>
+
+</div>
+
+
+
 <br>
-<div id = "welcomeMenuItem"><a href="loadAdventure.jsp">Load Adventure</a></div>
+<div id = "welcomeMenuItem">
+	<p>Forgot your password?</p><a href="#">Click Here</a>
+    <br>
+	<p>Not a member yet?</p><a href="loadAdventure.jsp">Click here to create an account.</a><br>
+</div>
+</form>
 
 </div>
 

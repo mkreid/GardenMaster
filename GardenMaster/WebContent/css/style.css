@@ -8,7 +8,7 @@
 }
 
 #header {
-	background-color: gray;
+	background-color: #457D00;
 	text-align: center;
 	border-bottom: solid #000000; 
 	font-family: 'Cinzel Decorative';
@@ -35,7 +35,7 @@
 #welcomeMenu {	
 	width: auto;
 	height: auto;
-	background-color: #c0c0c0;
+	background-color: #fcec9a;
 	margin: 0 auto;
 	padding: 10px;
 	position: relative;
@@ -58,7 +58,7 @@
 
 
 #footer {
-	background-color: #c0c0c0;
+	background-color: #c6c736;
 	clear: both;
 	font-family: 'Cinzel Decorative';
 	text-align: center;

@@ -20,6 +20,7 @@ public class LoginController extends HttpServlet {
 	
 	public static final int LOGIN_REQUEST = 1;
 	public static final int LOGOUT_REQUEST = 2;
+	public static final int SIGNUP_REQUEST = 3;
 	
 	private final static Logger LOGGER = Logger.getLogger(LoginController.class.getName());
 	
@@ -71,11 +72,50 @@ public class LoginController extends HttpServlet {
 			resp.sendRedirect("login.jsp");
 			
 			LOGGER.info("LoginController: End of logout_reqeust");
+		} else if (Integer.parseInt(actionDelimiter) == SIGNUP_REQUEST) {
+			// we're handling a sign up request
+			
+			String username = req.getParameter("username");
+			String email = req.getParameter("email");
+			String psw = req.getParameter("psw"); // validation is done via JS client side!
+			
+			LOGGER.info("New user signup request for User:" + username + "/" + psw + " associated to " + email );
+			
+			// do some database stuff
+			String status = DatabaseController.registerUser(username, psw, "john", "Doe", email);
+			
+			LOGGER.info("UserRegistration status from db is: " + status);
+			
+			// if user was created let the client know
+			if (status.equalsIgnoreCase("TRUE")) {
+				req.getSession().setAttribute("UserRegistration", "TRUE");
+				
+			} else {
+			// otherwise let them know what went wrong
+				req.getSession().setAttribute("UserRegistration", status);
+			}
+			
+			// redirect back to signup.jsp
+			resp.sendRedirect("signup.jsp");
+			
+			LOGGER.info("LoginController: End of signup_request");
 		} else {
 			// Unknown request!
 			LOGGER.severe("LoginController: Warning! Unknown LoginController action request encountered.");
+			resp.sendRedirect("login.jsp");
 		}
 		
+		
+		
+	}
+
+
+
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		// People should get here!
+		resp.sendRedirect("login.jsp");
 	}
 	
 	

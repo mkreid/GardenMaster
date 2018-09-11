@@ -23,3 +23,10 @@ insert into SEC_USERS
 			1, 
 			SYSDATE(), 
 			null);
+			
+-- setup the user table:
+drop table sec_pw_reset;
+create table sec_pw_reset ( 
+token VARCHAR(36), 
+email_addr VARCHAR(255),
+expires DATE );

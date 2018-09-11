@@ -9,8 +9,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLNonTransientConnectionException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 
 public class DatabaseController {
@@ -18,20 +20,30 @@ public class DatabaseController {
 	private static final String DB_URL = "jdbc:mysql://localhost:3306/gardenmaster?autoReconnect=true&useSSL=false";
 	private static final String DB_USER = "mkreid";
 	private static final String DB_PWD = "ratbastard";
+	private static final String PW_SALT = "ILUV2PARTY!";
 	
 	private static Connection conn;
 	private static String stmt;
 	private static PreparedStatement ps;
 	private static ResultSet rs;
 	
+	public static final int AUTH_FAILURE     = 0;
+	public static final int AUTH_SUCCESS     = 1;
+	public static final int AUTH_NO_DB 		 = 2;
+	public static final int AUTH_UNKNOWN_ERR = 3;
 	
-	public static boolean authenticateUser(String username, String password) {
+	
+	public static int authenticateUser(String username, String password) {
 		
 		try {
 			
 			setupConnection();
 			stmt = "select count(*) from SEC_USERS where username = ? and password = ?";
-			ps = conn.prepareStatement(stmt);
+			if (conn != null) {
+				ps = conn.prepareStatement(stmt);
+			} else {
+				return DatabaseController.AUTH_NO_DB;
+			}
 			ps.setString(1, username);
 			ps.setString(2, obfuscatepw(password));
 			
@@ -50,15 +62,22 @@ public class DatabaseController {
 					ps.executeUpdate();
 					
 					closeConnection();
-					return true; 
+					return DatabaseController.AUTH_SUCCESS; 
 				}
 			}
 			
-		} catch (Exception e) {
+		} catch (SQLNonTransientConnectionException e) {
+			// No db to connect to ...
 			e.printStackTrace();
+			return DatabaseController.AUTH_NO_DB;
+			
+		} catch (Exception e) {
+			// something else went wrong authenticating!
+			e.printStackTrace();
+			return DatabaseController.AUTH_UNKNOWN_ERR;
 		}
 		closeConnection();
-		return false;
+		return DatabaseController.AUTH_FAILURE;
 	}
 	
 	
@@ -111,12 +130,53 @@ public class DatabaseController {
 		}
 	
 	
+	/**
+	 * This function is used during password reset requests.
+	 * It looks up a given email in the database and returns 
+	 * true if and only if there is an account registered to
+	 * that email address.
+	 * 
+	 * @param email - address to check the database for
+	 * @return true if account found, false otherwise.
+	 */
+	public static boolean emailLookup(String email) {
+		
+		try {
+			// prepare connection
+			setupConnection();
+			
+			// prepare stmt:
+			stmt = "select username from SEC_USERS where email_addr = ?";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, email);
+			
+			// execute prepared statement
+			ResultSet rs = ps.executeQuery();
+			
+			if (rs.next()) {
+				// we found an account!
+				
+				return true;
+			}
+			
+			// close connection
+			closeConnection();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// no account found
+		return false;
+	}
+	
+	
 	private static String obfuscatepw(String pw) throws DigestException {
 
 		//obfuscate password:
 		MessageDigest md = null;
 		String obfpw = "";
-		String payload = (pw+"ILUV2PARTY!");
+		String payload = (pw + PW_SALT);
 		 try {
 			 md = MessageDigest.getInstance("SHA-1");
 		     md.update(payload.getBytes());
@@ -139,6 +199,7 @@ public class DatabaseController {
 			conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PWD);
 		} catch (ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
+			conn = null;
 		}
 		
 	}
@@ -154,6 +215,40 @@ public class DatabaseController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+	}
+
+
+	public static boolean registerPwReset(String email, UUID token, Date expiry) {
+		try {
+			// prepare connection
+			setupConnection();
+			java.text.SimpleDateFormat sdf = 
+				     new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			
+			// prepare stmt:
+			stmt = "insert into SEC_PW_RESET (token, email_addr, expires) values (?, ?, ?)";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, String.valueOf(token));
+			ps.setString(2, email);
+			ps.setString(3, sdf.format(expiry));
+			
+						
+			// execute prepared statement
+			int result = ps.executeUpdate();
+			
+			if (result == 1) {
+				return true;
+			}
+			
+			// close connection
+			closeConnection();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return false;
 		
 	}
 }

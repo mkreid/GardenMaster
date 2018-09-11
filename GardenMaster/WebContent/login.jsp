@@ -1,7 +1,6 @@
 <%@page import="java.io.Writer"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
-    
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,7 +10,7 @@
 </head>
 <body>
 <div id = "header">
-Welcome to GardenMaster!</div>
+<a href="login.jsp">Welcome to GardenMaster!</a></div>
 
 <div id = "welcomeMenu">
 
@@ -29,7 +28,9 @@ Welcome to GardenMaster!</div>
 	<% 
 	String errorCode = (String)request.getSession().getAttribute("ErrorCode"); 
 	if (errorCode != null) {
+		// display error then clear it for next render.
 		out.println("<p style='color:red;'>" + errorCode + "</p>");
+		request.getSession().setAttribute("ErrorCode", null);	
 	}	
 	%>
 	<label>
@@ -42,7 +43,7 @@ Welcome to GardenMaster!</div>
 
 <br>
 <div id = "welcomeMenuItem">
-	<p>Forgot your password?</p><a href="#">Click Here</a>
+	<p>Forgot your password?</p><a href="forgot.jsp">Click Here</a>
     <br>
 	<p>Not a member yet?</p><a href="signup.jsp">Click here to create an account.</a><br>
 </div>
@@ -50,6 +51,6 @@ Welcome to GardenMaster!</div>
 
 </div>
 
-<div id="footer">(C) 2017 - Malcolm - v0.1</div>
+<%@include file = "/parts/footer.jsp" %>
 </body>
 </html>

@@ -4,10 +4,6 @@
   <display-name>GardenMaster</display-name>
 
 	<servlet>
-		<servlet-name>AdventureCreator</servlet-name>
-		<servlet-class>control.AdventureCreator</servlet-class>
-	</servlet>
-	<servlet>
 		<servlet-name>LoginController</servlet-name>
 		<servlet-class>control.LoginController</servlet-class>
 	</servlet>

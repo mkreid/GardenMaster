@@ -10,11 +10,11 @@ import javax.mail.internet.MimeMessage;
 public class Postmaster  {
 	private final static Logger LOGGER = Logger.getLogger(LoginController.class.getName());
 
-	private static final String FROM = "malcolm.k.reid@gmail.com";
-	private static final String TO   = "kerbango666@gmail.com";
+	private static final String FROM = "<snip>";
+	private static final String TO   = "<snip>";
 	private static final String FROM_NAME = "No Reply";
-	private static final String SMTP_USERNAME = "malcolm.k.reid@gmail.com";
-	private static final String SMTP_PASSWORD = "m1lc2lmreid";
+	private static final String SMTP_USERNAME = "<snip>";
+	private static final String SMTP_PASSWORD = "<snip>";
 	private static final String HOST = "smtp.gmail.com";
 	private static final int    SMTP_PORT = 587;
 	

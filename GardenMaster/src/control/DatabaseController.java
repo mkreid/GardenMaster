@@ -1,5 +1,6 @@
 package control;
 
+import java.io.IOException;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,25 +13,59 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLNonTransientConnectionException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 import java.util.UUID;
 
 
 public class DatabaseController {
 	
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/gardenmaster?autoReconnect=true&useSSL=false";
-	private static final String DB_USER = "mkreid";
-	private static final String DB_PWD = "ratbastard";
-	private static final String PW_SALT = "ILUV2PARTY!";
+	private static final String DB_URL;
+	private static final String DB_USER;
+	private static final String DB_PWD;
+	private static final String PW_SALT;
+	
+	// Setup Public final info strings
+	public static final String VERSION = "0.1a";
+	public static final String COPYRIGHT_YEAR = "2019";
 	
 	private static Connection conn;
 	private static String stmt;
 	private static PreparedStatement ps;
 	private static ResultSet rs;
 	
+	private static final Properties config;
+	
 	public static final int AUTH_FAILURE     = 0;
 	public static final int AUTH_SUCCESS     = 1;
 	public static final int AUTH_NO_DB 		 = 2;
 	public static final int AUTH_UNKNOWN_ERR = 3;
+	
+	
+	static {
+		Properties fallback = new Properties();
+		fallback.setProperty("DB_URL",  "jdbc:mysql://localhost:3306/gardenmaster");
+		fallback.setProperty("DB_USER", "gardenmaster");
+		fallback.setProperty("DB_PWD",  "password");
+		fallback.setProperty("PW_SALT", "GIVE_ME_YOUR_SALTY_TEARS");
+		config = new Properties(fallback);
+		try {
+			config.load(DatabaseController.class.getResourceAsStream("../gardenmaster.conf")); // must be in GardenMaster/WEB-INF/classes/
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// capture properties:
+		DB_URL  = config.getProperty("DB_URL");
+		DB_USER = config.getProperty("DB_USER");
+		DB_PWD  = config.getProperty("DB_PWD");
+		PW_SALT = config.getProperty("PW_SALT");
+		
+		// Output for debug info:
+		System.out.println("config file DB_URL is: " + DB_URL);		
+		System.out.println("config file DB_USER is: " + DB_USER);
+		System.out.println("config file DB_PWD is: " + DB_PWD);
+		System.out.println("config file PW_SALT is: " + PW_SALT);
+	}
 	
 	
 	public static int authenticateUser(String username, String password) {
@@ -79,7 +114,6 @@ public class DatabaseController {
 		closeConnection();
 		return DatabaseController.AUTH_FAILURE;
 	}
-	
 	
 	public static String registerUser(String username, String password, String first_name, String last_name, String email) {	
 		String status = "FASLE";
@@ -251,4 +285,88 @@ public class DatabaseController {
 		return false;
 		
 	}
+	
+	
+	public static boolean tokenIsExpired(UUID token) {
+		boolean isExpired = true;
+		try {
+			// prepare connection
+			setupConnection();
+						
+			// prepare stmt:
+			stmt = "select expires from SEC_PW_RESET where token = ?";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, String.valueOf(token));
+			
+			Date now = new Date(System.currentTimeMillis());	
+						
+			// execute prepared statement
+			ResultSet rs = ps.executeQuery();
+			
+			if (rs.next()) {
+				Date e = rs.getDate(1);
+				
+				if (e.before(now)) {
+					isExpired = false;
+				}
+			} 
+			
+			// close connection
+			closeConnection();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return isExpired;
+		
+	}
+	
+	public static boolean resetPassword(UUID token, String newPassword) {
+		try {
+			setupConnection();
+			String email_addr = "";
+			// Look up the token to find the associated email:
+			stmt = "select email_addr from SEC_PW_RESET where token = ?";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, String.valueOf(token));
+			
+			ResultSet rs = ps.executeQuery();
+			
+			if (rs.next()) {
+				email_addr = rs.getString(1);
+			}
+			
+			// Look up username, given the email address:
+			stmt = "select username from SEC_USERS where email_addr = ?";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, email_addr);
+			
+			rs = ps.executeQuery();
+			if (rs.next()) {
+			}
+		
+			// Now, update that user's password:
+			stmt = "update SEC_USERS set password = ? where email_addr = ?";
+			ps = conn.prepareStatement(stmt);
+			ps.setString(1, obfuscatepw(newPassword));
+			ps.setString(2, email_addr);
+			
+			// execute prepared statement
+			int result = ps.executeUpdate();
+			
+			if (result == 1) {
+				closeConnection();
+				return true;
+			}
+			
+			// close connection
+			closeConnection();
+			
+		} catch (SQLException | DigestException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 }

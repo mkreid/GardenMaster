@@ -20,10 +20,11 @@ public class LoginController extends HttpServlet {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	public static final int LOGIN_REQUEST = 1;
+	public static final int LOGIN_REQUEST  = 1;
 	public static final int LOGOUT_REQUEST = 2;
 	public static final int SIGNUP_REQUEST = 3;
 	public static final int PW_RESET_REQUEST = 4;
+	public static final int PW_RESET       = 5;
 	
 	private final static Logger LOGGER = Logger.getLogger(LoginController.class.getName());
 	
@@ -142,6 +143,7 @@ public class LoginController extends HttpServlet {
 					
 					// TODO: Send email with reset URL:
 					sendNewPasswordEmail(email, token);
+					LOGGER.info("DBG::: reset_url: http://localhost:8080/GardenMaster/forgot.jsp?token="+token);
 					
 					
 					// redirect back to login site for now.
@@ -160,6 +162,29 @@ public class LoginController extends HttpServlet {
 			
 			
 			LOGGER.info("LoginController: End of pw_reset_request");
+		} else if (Integer.parseInt(actionDelimiter) == PW_RESET) {
+			LOGGER.info("LoginController: Start of pw_reset");
+			// we're handling a reset password request
+			String strToken = req.getParameter("token");
+			UUID token = UUID.fromString(strToken);
+			String newPassword = req.getParameter("password1"); //TODO: add client side validation!
+			LOGGER.info("DBG:: strToken="+ strToken + " ; newPassword=" + newPassword + "; token=" + token);
+			
+			// check if token is expired
+			if (!DatabaseController.tokenIsExpired(token)) {
+				// reset password
+				DatabaseController.resetPassword(token, newPassword);
+				req.getSession().setAttribute("ErrorCode", "Password reset.");
+				resp.sendRedirect("login.jsp");
+				
+			} else {
+				// token isn't valid
+				req.getSession().setAttribute("ErrorCode", "Unable to reset password; token is expred.");
+				resp.sendRedirect("forgot.jsp");
+			}
+			
+			LOGGER.info("LoginController: End of pw_reset");
+			
 		} else {
 			// Unknown request!
 			LOGGER.severe("LoginController: Warning! Unknown LoginController action request encountered.");
